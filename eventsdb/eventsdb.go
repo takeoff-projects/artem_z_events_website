@@ -2,9 +2,11 @@ package eventsdb
 
 import (
 	"errors"
+	"os"
 
 	"context"
 	"log"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
@@ -20,11 +22,18 @@ type Event struct {
 	When     string `firestore:"when"`
 }
 
+var projectID string
 var Events []Event
 
 func InitializeEventsArray() {
+
+	projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		log.Fatal(`You need to set the environment variable "GOOGLE_CLOUD_PROJECT"`)
+	}
+
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "projectID")
+	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		// TODO: Handle error.
 	}
