@@ -6,7 +6,6 @@ import (
 
 	"context"
 	"log"
-	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
@@ -23,9 +22,10 @@ type Event struct {
 }
 
 var projectID string
+
 var Events []Event
 
-func InitializeEventsArray() {
+func GetEvents() []Event {
 
 	projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
@@ -35,18 +35,16 @@ func InitializeEventsArray() {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
-		// TODO: Handle error.
+		log.Fatal(ctx, "Error creating firestore client")
 	}
 	iter := client.Collection("Events").Documents(ctx)
-	defer iter.Stop() // add this line to ensure resources cleaned up
+	defer iter.Stop()
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
-			// Handle error, possibly by returning the error
-			// to the caller. Break the loop or return.
 			log.Fatal(ctx, "Error in iterating over docs")
 		}
 		var e Event
@@ -56,11 +54,12 @@ func InitializeEventsArray() {
 		}
 		Events = append(Events, e)
 	}
-}
-
-func GetEvents() []Event {
 	return Events
 }
+
+// func GetEvents() []Event {
+// 	return Events
+// }
 
 // func InitializeEventsArray() {
 // 	Events = []Event{
