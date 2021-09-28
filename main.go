@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// This just adds some events for testing.
-	eventsdb.InitializeEventsArray()
+	// eventsdb.InitializeEventsArray()
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -64,7 +64,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	data := AboutPageData{
-		PageTitle: "About Go Website",
+		PageTitle: "About Artem Z's events",
 	}
 
 	var tpl = template.Must(template.ParseFiles("templates/about.html", "templates/layout.html"))
