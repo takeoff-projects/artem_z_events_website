@@ -10,7 +10,7 @@ resource "google_cloud_run_service" "default" {
   template {
     spec {
       containers {
-        image = "gcr.io/roi-takeoff-user3/events-website:v1.0"
+        image = "gcr.io/roi-takeoff-user3/events-website:v1.0.1"
         env {
           name = "GOOGLE_CLOUD_PROJECT"
           value = var.project_id

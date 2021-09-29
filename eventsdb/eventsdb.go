@@ -1,14 +1,13 @@
 package eventsdb
 
 import (
-	"errors"
+	"fmt"
 	"os"
 
 	"context"
 	"log"
 
 	"cloud.google.com/go/firestore"
-	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
 	// "google.golang.org/appengine/log"
 )
@@ -23,20 +22,27 @@ type Event struct {
 
 var projectID string
 
-var Events []Event
+var ctx = context.Background()
 
-func GetEvents() []Event {
+func connect() *firestore.Client {
 
 	projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
 		log.Fatal(`You need to set the environment variable "GOOGLE_CLOUD_PROJECT"`)
 	}
 
-	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatal(ctx, "Error creating firestore client")
 	}
+	return client
+}
+
+func GetEvents() []Event {
+
+	var Events []Event
+
+	client := connect()
 	iter := client.Collection("Events").Documents(ctx)
 	defer iter.Stop()
 	for {
@@ -50,64 +56,64 @@ func GetEvents() []Event {
 		var e Event
 		if err := doc.DataTo(&e); err != nil {
 			log.Fatal(ctx, "Error in transforming doc to Event")
-
 		}
+		e.ID = doc.Ref.ID
 		Events = append(Events, e)
 	}
+	fmt.Println(Events)
+	client.Close()
 	return Events
 }
 
-// func GetEvents() []Event {
-// 	return Events
-// }
-
-// func InitializeEventsArray() {
-// 	Events = []Event{
-// 		{Title: "Dinner",
-// 			Location: "My House",
-// 			When:     "Tonight",
-// 			ID:       "2944a9cb-ef2d-4632-ac1d-af2b2629d0f2"},
-// 		{Title: "Go Programming Lesson",
-// 			Location: "At School",
-// 			When:     "Tomorrow",
-// 			ID:       "f88f1860-9a5d-423e-820f-9acb4db3030e"},
-// 		{Title: "Company Picnic",
-// 			Location: "At the Park",
-// 			When:     "Saturday",
-// 			ID:       "4cb393fb-dd19-469e-a52c-22a12c0a98df"},
-// 	}
-// }
-
 func GetEventbyID(key string) (Event, error) {
-	for _, event := range Events {
-		if event.ID == key {
-			return event, nil
-		}
+
+	var ev Event
+
+	fmt.Println("Key", key)
+
+	client := connect()
+	evRef := client.Collection("Events").Doc(key)
+	docsnap, err := evRef.Get(ctx)
+	fmt.Println(docsnap)
+	if err != nil {
+		log.Fatal(ctx, "Error in getting event by id")
 	}
-	return Event{}, errors.New("not found")
+	if err := docsnap.DataTo(&ev); err != nil {
+		log.Fatal(ctx, "Error in transforming firestoree doc to event by id")
+	}
+	client.Close()
+	return ev, err
 }
 
 func AddEvent(event Event) {
-	newID := uuid.New().String()
-	event.ID = newID
-	Events = append(Events, event)
+	client := connect()
+	_, wr, err := client.Collection("Events").Add(ctx, event)
+	if err != nil {
+		log.Print("Error creating doc")
+	}
+	log.Println(wr)
+	client.Close()
 }
 
-func UpdateEvent(updatedEvent Event) {
-	for index, event := range Events {
-		if event.ID == updatedEvent.ID {
-			Events[index].Title = updatedEvent.Title
-			Events[index].Location = updatedEvent.Location
-			Events[index].When = updatedEvent.When
-			return
-		}
+func UpdateEvent(eventID string, updatedEvent Event) {
+	client := connect()
+	evRef := client.Collection("Events").Doc(eventID)
+	fmt.Println("Event to be updated: ", evRef)
+	_, err := evRef.Update(ctx, []firestore.Update{
+		{Path: "Title", Value: updatedEvent.Title},
+		{Path: "Location", Value: updatedEvent.Location},
+		{Path: "When", Value: updatedEvent.When}})
+	if err != nil {
+		log.Fatal(ctx, "Error in updating event")
 	}
+	client.Close()
 }
 
 func DeleteEvent(id string) {
-	for index, event := range Events {
-		if event.ID == id {
-			Events = append(Events[:index], Events[index+1:]...)
-		}
+	client := connect()
+	doc := client.Collection("Events").Doc(id)
+	_, err := doc.Delete(ctx)
+	if err != nil {
+		log.Println(ctx, "Error deleting doc")
 	}
 }

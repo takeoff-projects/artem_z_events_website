@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -12,8 +13,6 @@ import (
 )
 
 func main() {
-	// This just adds some events for testing.
-	// eventsdb.InitializeEventsArray()
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -100,12 +99,14 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("Add Page Served")
 	} else {
+
 		// Add Event Here
 		event := eventsdb.Event{
 			Title:    r.FormValue("title"),
 			Location: r.FormValue("location"),
 			When:     r.FormValue("when"),
 		}
+		log.Println("Going to create new event: ", event)
 		eventsdb.AddEvent(event)
 
 		// Go back to home page
@@ -114,9 +115,12 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
+	eventID := mux.Vars(r)["id"]
 	if r.Method == http.MethodGet {
-		log.Println("Edit Handler")
-		event, error := eventsdb.GetEventbyID(mux.Vars(r)["id"])
+		log.Println("Edit Handler - editing event", eventID)
+
+		event, error := eventsdb.GetEventbyID(eventID)
+
 		if error != nil {
 			http.Error(w, error.Error(), http.StatusInternalServerError)
 			log.Println(error.Error())
@@ -126,8 +130,9 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		data := EditPageData{
 			PageTitle: "Edit Event",
 			Event:     event,
+			EventID:   eventID,
 		}
-
+		log.Println("Event: ", event)
 		var tpl = template.Must(template.ParseFiles("templates/edit.html", "templates/layout.html"))
 
 		buf := &bytes.Buffer{}
@@ -148,7 +153,8 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			Location: r.FormValue("location"),
 			When:     r.FormValue("when"),
 		}
-		eventsdb.UpdateEvent(event)
+		fmt.Println("preparing to update event with: ", event)
+		eventsdb.UpdateEvent(eventID, event)
 		log.Println("Event Updated")
 
 		// Go back to home page
@@ -185,4 +191,5 @@ type AddPageData struct {
 type EditPageData struct {
 	PageTitle string
 	Event     eventsdb.Event
+	EventID   string
 }

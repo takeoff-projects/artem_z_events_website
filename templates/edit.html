@@ -7,7 +7,7 @@
 	<h1>{{.PageTitle}}</h1>
 
 	<div class="row">
-		<form method="post" action="/edit/{{.Event.ID}}" enctype="multipart/form-data">
+		<form method="post" action="/edit/{{.EventID}}" enctype="multipart/form-data">
 			<div class="form-group">
 				<label for="name">Title:</label>
 				<input type="text" class="form-control" id="title" name="title" value={{.Event.Title}}>
@@ -21,7 +21,7 @@
 				<input type="text" class="form-control" id="when" name="when" value="{{.Event.When}}">
 			</div>
 
-			<input type="hidden" id="id" name="id" value="{{.Event.ID}}">
+			<input type="hidden" id="id" name="id" value="{{.EventID}}">
 			<button type="submit" class="btn btn-default">Save</button>
 		</form>
 	</div>
