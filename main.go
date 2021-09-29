@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"drehnstrom.com/go-website/eventsdb"
+	"drehnstrom.com/go-website/eventsapi"
 	"github.com/gorilla/mux"
 )
 
@@ -16,7 +16,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "7999"
 
 	}
 	log.Printf("Port set to: %s", port)
@@ -39,7 +39,7 @@ func main() {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	var events = eventsdb.GetEvents()
+	var events = eventsapi.GetEvents()
 
 	data := HomePageData{
 		PageTitle: "Home Page",
@@ -101,13 +101,13 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		// Add Event Here
-		event := eventsdb.Event{
+		event := eventsapi.Event{
 			Title:    r.FormValue("title"),
 			Location: r.FormValue("location"),
 			When:     r.FormValue("when"),
 		}
 		log.Println("Going to create new event: ", event)
-		eventsdb.AddEvent(event)
+		eventsapi.AddEvent(event)
 
 		// Go back to home page
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -119,7 +119,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		log.Println("Edit Handler - editing event", eventID)
 
-		event, error := eventsdb.GetEventbyID(eventID)
+		event, error := eventsapi.GetEventbyID(eventID)
 
 		if error != nil {
 			http.Error(w, error.Error(), http.StatusInternalServerError)
@@ -132,7 +132,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			Event:     event,
 			EventID:   eventID,
 		}
-		log.Println("Event: ", event)
+		log.Println("Editing event: ", event)
 		var tpl = template.Must(template.ParseFiles("templates/edit.html", "templates/layout.html"))
 
 		buf := &bytes.Buffer{}
@@ -147,14 +147,14 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Edit Page Served")
 	} else {
 		// Add Event Here
-		event := eventsdb.Event{
+		event := eventsapi.Event{
 			ID:       r.FormValue("id"),
 			Title:    r.FormValue("title"),
 			Location: r.FormValue("location"),
 			When:     r.FormValue("when"),
 		}
 		fmt.Println("preparing to update event with: ", event)
-		eventsdb.UpdateEvent(eventID, event)
+		eventsapi.UpdateEvent(eventID, event)
 		log.Println("Event Updated")
 
 		// Go back to home page
@@ -163,7 +163,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
-	eventsdb.DeleteEvent(mux.Vars(r)["id"])
+	eventsapi.DeleteEvent(mux.Vars(r)["id"])
 	log.Println("Event deleted")
 
 	// Go back to home page
@@ -173,7 +173,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 // HomePageData for Index template
 type HomePageData struct {
 	PageTitle string
-	Events    []eventsdb.Event
+	Events    []eventsapi.Event
 	Count     int
 }
 
@@ -190,6 +190,6 @@ type AddPageData struct {
 // EditPageData for About template
 type EditPageData struct {
 	PageTitle string
-	Event     eventsdb.Event
+	Event     eventsapi.Event
 	EventID   string
 }
